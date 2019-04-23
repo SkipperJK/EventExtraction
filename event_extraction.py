@@ -1,3 +1,4 @@
+#coding=utf-8
 from News import *
 from preprocessing import *
 from TokenizeNews import *

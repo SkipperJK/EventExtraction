@@ -38,7 +38,7 @@ class TokenizeNews():
     #     seg_pos_all_text = []
     event = None
 
-    def title(self):
+    def title_token_string(self):
         title = ''
         for x in self.seg_pos_title:
             title = title + ' ' + x[0]
@@ -52,7 +52,7 @@ class TokenizeNews():
         return content
 
     def all_text(self):
-        return self.title() + ' ' + self.content()
+        return self.title_token_string() + ' ' + self.content()
 
     def sentents_count(self):
         return len(self.seg_pos_sentences)

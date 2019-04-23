@@ -2,6 +2,7 @@ import os
 from pyltp import Segmentor, Postagger, Parser, NamedEntityRecognizer, SementicRoleLabeller
 LTP_DATA_DIR = '/home/skipper/Downloads/ltp_data_v3.4.0'
 
+
 # 没有加载模型成功，竟然不报错。。。
 # 分词模型-load
 seg_model_path = os.path.join(LTP_DATA_DIR, 'cws.model')
@@ -162,6 +163,32 @@ def srl(sentence):
 
 
     """
+    '''
+    # 分词模型-load
+    seg_model_path = os.path.join(LTP_DATA_DIR, 'cws.model')
+    segmentor = Segmentor()
+    segmentor.load(seg_model_path)
+
+    # 词性标注模型-load
+    pos_model_path = os.path.join(LTP_DATA_DIR, 'pos.model')
+    postagger = Postagger()
+    postagger.load(pos_model_path)
+
+    # 依存句法分析模型-load
+    parser_model_path = os.path.join(LTP_DATA_DIR, 'parser.model')
+    parser = Parser()
+    parser.load(parser_model_path)
+
+    # 命名体识别模型-load
+    ner_model_path = os.path.join(LTP_DATA_DIR, 'ner.model')
+    recognizer = NamedEntityRecognizer()
+    recognizer.load(ner_model_path)
+
+    # 语义角色标注模型-load
+    srl_model_path = os.path.join(LTP_DATA_DIR, 'pisrl.model')
+    labeller = SementicRoleLabeller()
+    labeller.load(srl_model_path)
+    '''
 
     words = segmentor.segment(sentence)
     postags = postagger.postag(words)
@@ -188,6 +215,11 @@ def srl(sentence):
                 location = get_object(words, arg.range.start, arg.range.end)
     #                 print("Location: %s"%location)
 
+    segmentor.release()
+    postagger.release()
+    parser.release()
+    recognizer.release()
+    labeller.release()
     return who, whom, temporal, location
 
 
@@ -211,7 +243,7 @@ def get_object(words, start, end):
 
 # sent = '国务院总理李克强调研上海外高桥时提出，支持上海积极探索新机制。'
 # sent = '不到半年两起空难346人死亡 波音恐在劫难逃'
-sent = '全球最大航企美国航空:延长波音737MAX的停飞期'
+# sent = '全球最大航企美国航空:延长波音737MAX的停飞期'
 # 国务院 (机构名) 总理李克强 (人名) 调研上海外高桥 (地名) 时提出，支持上海 (地名) 积极探索新机制。
 
 
@@ -235,7 +267,7 @@ def extract_arg(tokenizeNews_list):
         l = []
         #     #     print(idx)
         #         print(news_list[idx].title)
-        temp1, temp2, temp3, temp4 = srl(news_list[idx].title)
+        temp1, temp2, temp3, temp4 = srl(tokenizeNews.title)
         #         print()
         w1.append(temp1)
         w2.append(temp2)
