@@ -1,6 +1,9 @@
 import os
+
+'''
 from pyltp import Segmentor, Postagger, Parser, NamedEntityRecognizer, SementicRoleLabeller
 LTP_DATA_DIR = '/home/skipper/Downloads/ltp_data_v3.4.0'
+
 
 
 # 没有加载模型成功，竟然不报错。。。
@@ -28,6 +31,7 @@ recognizer.load(ner_model_path)
 srl_model_path = os.path.join(LTP_DATA_DIR, 'pisrl.model')
 labeller = SementicRoleLabeller()
 labeller.load(srl_model_path)
+'''
 
 
 class Event():
@@ -151,6 +155,8 @@ def find_date(tokenizeNews_list, N=3):
 #     return date_count_dic
 
 
+
+'''
 def srl(sentence):
     """Semantic Role Label
 
@@ -163,32 +169,6 @@ def srl(sentence):
 
 
     """
-    '''
-    # 分词模型-load
-    seg_model_path = os.path.join(LTP_DATA_DIR, 'cws.model')
-    segmentor = Segmentor()
-    segmentor.load(seg_model_path)
-
-    # 词性标注模型-load
-    pos_model_path = os.path.join(LTP_DATA_DIR, 'pos.model')
-    postagger = Postagger()
-    postagger.load(pos_model_path)
-
-    # 依存句法分析模型-load
-    parser_model_path = os.path.join(LTP_DATA_DIR, 'parser.model')
-    parser = Parser()
-    parser.load(parser_model_path)
-
-    # 命名体识别模型-load
-    ner_model_path = os.path.join(LTP_DATA_DIR, 'ner.model')
-    recognizer = NamedEntityRecognizer()
-    recognizer.load(ner_model_path)
-
-    # 语义角色标注模型-load
-    srl_model_path = os.path.join(LTP_DATA_DIR, 'pisrl.model')
-    labeller = SementicRoleLabeller()
-    labeller.load(srl_model_path)
-    '''
 
     words = segmentor.segment(sentence)
     postags = postagger.postag(words)
@@ -316,4 +296,6 @@ def extract_arg(tokenizeNews_list):
         print(location)
 
 #         break
+
+'''
 

@@ -1,4 +1,8 @@
 venv
 *.pyc
+data_path
+data_path/*
+data_path_save
+data_path_save/*
 .git/*
 .idea/*
