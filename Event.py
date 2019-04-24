@@ -49,6 +49,11 @@ class Event():
     location = ""
     core_words = []
     objects = []
+    loc_count_dic = {}
+    date_count_dic = {}
+    per_count_dic = {}
+    loc_count_dic_dnn = {}
+    org_count_dic = {}
 
     def show(self):
         print("Event detail:")
@@ -60,99 +65,99 @@ class Event():
 # define event class some function ,such as print???
 
 
-def find_location(tokenizeNews_list, N=3):
-    """找到News中的地理位置
-
-    Version_1: 只是简单的通过POS的标注来判断是否是location
-    Version_2: LSTM+CRF
-
-    Problems:
-        地点词'ns'，有些词不是地点词，也被标注成了地点词。（预处理一下会好吗，可以试试，去掉stopwords
-            ('35个', 'ns')('11&', 'ns')('35&', 'ns')('74&', 'ns')('Sunwing）', 'ns')
-            ('那', 'ns')('&&&埃塞俄比亚', 'ns')('[环', 'ns')(']肯尼亚', 'ns')
-            还有一个问题，这里的location是确切的event发生的地点，还是和event相关的地点。（娱乐新闻应该和location没有太紧密的联系）再有就是看把event是用来干什么的，
-            如果就是用来明确的表达一个event，那应该就是event发生的location，如果是用来clustering的，那就应该是与event相关的locations
-
-    Args:
-        tokenizeNews_list: 经过预处理之后的News列表
-        N: 按照得分排序后的前N个句子
-
-    Return:
-        location_count字典
-
-    """
-
-    for idx, tokenizeNews in enumerate(tokenizeNews_list):
-        location_count_dic = {}
-
-        # 从News的title中找location
-        for item in tokenizeNews.seg_pos_title:
-            if item[1] == 'ns':  # ns 地名
-                if item[0] not in location_count_dic.keys():
-                    location_count_dic[item[0]] = 1
-                else:
-                    location_count_dic[item[0]] += 1
-
-        # 从News的前N个句子中找location
-        for i, idx in enumerate(tokenizeNews.descend_sentence_index):
-            if i < N:
-                for item in tokenizeNews.sentences[idx].seg_pos:
-                    if item[1] == 'ns':
-                        if item[0] not in location_count_dic.keys():
-                            location_count_dic[item[0]] = 1
-                        else:
-                            location_count_dic[item[0]] += 1
-
-        print(location_count_dic)
-#     return location_count_dic
-
-
-def find_date(tokenizeNews_list, N=3):
-    """找到News发生的时间
-
-
-    Version_1: 只是简单的通过POS的标注来判断是否是location
-    Version_2: LSTM+CRF
-
-    Problems:
-        时间词't'
-        由于通过POS识别出来的时间词有以下问题：
-        1.不是绝对时间，更多的是相对时间，例如：”昨日“，”当天“等等
-        2.时间残缺，例如缺少年份，月份，例如：“3月10日”，“10日”，“早晨八点”
-        上面的两个问题，猜想可以根据新闻发布的时间进行补全或者推断，但是，前提是假定提出来的时间是和发布时间是有关联的。
-
-        何老师：对于时间词的补全，可以在多事件上进行join操作，相互补全（相似度计算，相同的event进行一些确实维度的补全）
-
-    Args:
-        tokenizeNews_list: 经过预处理之后的News列表
-        N: 按照得分排序后的前N个句子
-
-    Return:
-        date_count字典
-    """
-    for idx, tokenizeNews in enumerate(tokenizeNews_list):
-        date_count_dic = {}
-
-        # 从News的title中找date
-        for item in tokenizeNews.seg_pos_title:
-            if item[1] == 't':
-                if item[0] not in date_count_dic.keys():
-                    date_count_dic[item[0]] = 1
-                else:
-                    date_count_dic[item[0]] += 1
-
-        # 从News的前N个句子中找date
-        for i, idx in enumerate(tokenizeNews.descend_sentence_index):
-            if i < 5:
-                for item in tokenizeNews.sentences[idx].seg_pos:
-                    if item[1] == 't':
-                        if item[0] not in date_count_dic.keys():
-                            date_count_dic[item[0]] = 1
-                        else:
-                            date_count_dic[item[0]] += 1
-
-        print(date_count_dic)
-#     return date_count_dic
+# def find_location(tokenizeNews_list, N=3):
+#     """找到News中的地理位置
+#
+#     Version_1: 只是简单的通过POS的标注来判断是否是location
+#     Version_2: LSTM+CRF
+#
+#     Problems:
+#         地点词'ns'，有些词不是地点词，也被标注成了地点词。（预处理一下会好吗，可以试试，去掉stopwords
+#             ('35个', 'ns')('11&', 'ns')('35&', 'ns')('74&', 'ns')('Sunwing）', 'ns')
+#             ('那', 'ns')('&&&埃塞俄比亚', 'ns')('[环', 'ns')(']肯尼亚', 'ns')
+#             还有一个问题，这里的location是确切的event发生的地点，还是和event相关的地点。（娱乐新闻应该和location没有太紧密的联系）再有就是看把event是用来干什么的，
+#             如果就是用来明确的表达一个event，那应该就是event发生的location，如果是用来clustering的，那就应该是与event相关的locations
+#
+#     Args:
+#         tokenizeNews_list: 经过预处理之后的News列表
+#         N: 按照得分排序后的前N个句子
+#
+#     Return:
+#         location_count字典
+#
+#     """
+#
+#     for idx, tokenizeNews in enumerate(tokenizeNews_list):
+#         location_count_dic = {}
+#
+#         # 从News的title中找location
+#         for item in tokenizeNews.seg_pos_title:
+#             if item[1] == 'ns':  # ns 地名
+#                 if item[0] not in location_count_dic.keys():
+#                     location_count_dic[item[0]] = 1
+#                 else:
+#                     location_count_dic[item[0]] += 1
+#
+#         # 从News的前N个句子中找location
+#         for i, idx in enumerate(tokenizeNews.descend_sentence_index):
+#             if i < N:
+#                 for item in tokenizeNews.sentences[idx].seg_pos:
+#                     if item[1] == 'ns':
+#                         if item[0] not in location_count_dic.keys():
+#                             location_count_dic[item[0]] = 1
+#                         else:
+#                             location_count_dic[item[0]] += 1
+#
+#         print(location_count_dic)
+# #     return location_count_dic
+#
+#
+# def find_date(tokenizeNews_list, N=3):
+#     """找到News发生的时间
+#
+#
+#     Version_1: 只是简单的通过POS的标注来判断是否是location
+#     Version_2: LSTM+CRF
+#
+#     Problems:
+#         时间词't'
+#         由于通过POS识别出来的时间词有以下问题：
+#         1.不是绝对时间，更多的是相对时间，例如：”昨日“，”当天“等等
+#         2.时间残缺，例如缺少年份，月份，例如：“3月10日”，“10日”，“早晨八点”
+#         上面的两个问题，猜想可以根据新闻发布的时间进行补全或者推断，但是，前提是假定提出来的时间是和发布时间是有关联的。
+#
+#         何老师：对于时间词的补全，可以在多事件上进行join操作，相互补全（相似度计算，相同的event进行一些确实维度的补全）
+#
+#     Args:
+#         tokenizeNews_list: 经过预处理之后的News列表
+#         N: 按照得分排序后的前N个句子
+#
+#     Return:
+#         date_count字典
+#     """
+#     for idx, tokenizeNews in enumerate(tokenizeNews_list):
+#         date_count_dic = {}
+#
+#         # 从News的title中找date
+#         for item in tokenizeNews.seg_pos_title:
+#             if item[1] == 't':
+#                 if item[0] not in date_count_dic.keys():
+#                     date_count_dic[item[0]] = 1
+#                 else:
+#                     date_count_dic[item[0]] += 1
+#
+#         # 从News的前N个句子中找date
+#         for i, idx in enumerate(tokenizeNews.descend_sentence_index):
+#             if i < 5:
+#                 for item in tokenizeNews.sentences[idx].seg_pos:
+#                     if item[1] == 't':
+#                         if item[0] not in date_count_dic.keys():
+#                             date_count_dic[item[0]] = 1
+#                         else:
+#                             date_count_dic[item[0]] += 1
+#
+#         print(date_count_dic)
+# #     return date_count_dic
 
 
 

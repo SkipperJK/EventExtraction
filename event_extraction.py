@@ -32,4 +32,4 @@ find_location(tokenizeNews_list, N = 5)
 
 find_date(tokenizeNews_list, N = 5)
 
-extract_arg(tokenizeNews_list)
+# extract_arg(tokenizeNews_list)
