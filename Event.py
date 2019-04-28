@@ -61,6 +61,11 @@ class Event():
         print("\tWhere: %s" % (self.location))
         print("\tOjects: %s" % (' '.join(self.objects)))
         print("\tCore Words: %s" % (' '.join(self.core_words)))
+        print("\tloc_count_dic:", self.loc_count_dic)
+        print("\tdate_count_dic:", self.date_count_dic)
+        print("\tper_count_dic:", self.per_count_dic)
+        print("\tloc_count_dic_dnn:", self.loc_count_dic_dnn)
+        print("\torg_count_dic:", self.org_count_dic)
 
 # define event class some function ,such as print???
 

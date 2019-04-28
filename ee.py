@@ -87,6 +87,9 @@ def execute(sentence):
     # print('PER: {}\nLOC: {}\nORG: {}'.format(PER, LOC, ORG))
     return PER, LOC, ORG
 
+import time
+fp = open("./log.txt", "a")
+fp.write("Begin:%s \n"%time.asctime(time.localtime()))
 
 news_list = read_mongo("Sina", "737news")
 tokenizeNews_list = []
@@ -121,8 +124,11 @@ for tokenizeNews in tokenizeNews_list:
     event = Event()
     event.date_count_dic = find_date(tokenizeNews, N=5)
     event.loc_count_dic = find_location(tokenizeNews, N=5)
+    event_list.append(event)
 
-for idx, tokenizeNews in enumerate(tokenizeNews_list):
+for j, tokenizeNews in enumerate(tokenizeNews_list):
+    fp.write("第 %d 个新闻：\n"%j)
+
     PER = []
     LOC = []
     ORG = []
@@ -130,6 +136,8 @@ for idx, tokenizeNews in enumerate(tokenizeNews_list):
     tmp_loc = []
     tmp_org = []
     tmp_per, tmp_loc, tmp_org = execute(tokenizeNews.title)
+    fp.write("\t%s\n"%tokenizeNews.title)
+    fp.write("\t\t {} {} {}\n".format(tmp_per, tmp_loc, tmp_org))
     PER += tmp_per
     LOC += tmp_loc
     ORG += tmp_org
@@ -139,9 +147,13 @@ for idx, tokenizeNews in enumerate(tokenizeNews_list):
             tmp_loc = []
             tmp_org = []
             tmp_per, tmp_loc, tmp_org = execute(tokenizeNews.sentences[idx].text)
+            fp.write("\t%s\n"%tokenizeNews.sentences[idx].text)
+            fp.write("\t\t {} {} {}\n".format(tmp_per, tmp_loc, tmp_org))
             PER += tmp_per
             LOC += tmp_loc
             ORG += tmp_org
+        else:
+            break
     per_count_dic = {}
     org_count_dic = {}
     loc_count_dic_dnn = {}
@@ -161,6 +173,21 @@ for idx, tokenizeNews in enumerate(tokenizeNews_list):
         else:
             org_count_dic[organization] += 1
 
-    event_list[idx].per_count_dic = per_count_dic
-    event_list[idx].loc_count_dic_dnn = loc_count_dic_dnn
-    event_list[idx].org_count_dic = org_count_dic
+    # 先假设新闻事件为发布时间
+    event_list[j].date = news_list[j].date
+    event_list[j].per_count_dic = per_count_dic
+    event_list[j].loc_count_dic_dnn = loc_count_dic_dnn
+    event_list[j].org_count_dic = org_count_dic
+    fp.write("第 %d 个事件：\n"%j)
+    fp.write("Event detail: \n")
+    fp.write("\tWhen: %s\n" % (event_list[j].date))
+    fp.write("\tWhere: %s\n" % (event_list[j].location))
+    fp.write("\tloc_count_dic: {}\n".format(event_list[j].loc_count_dic))
+    fp.write("\tdate_count_dic: {}\n".format(event_list[j].date_count_dic))
+    fp.write("\tper_count_dic: {}\n".format(event_list[j].per_count_dic))
+    fp.write("\tloc_count_dic_dnn: {}\n".format(event_list[j].loc_count_dic_dnn))
+    fp.write("\torg_count_dic: {}\n".format(event_list[j].org_count_dic))
+
+fp.close()
+for event in event_list:
+    event.show()

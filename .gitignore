@@ -6,3 +6,4 @@ data_path_save
 data_path_save/*
 .git/*
 .idea/*
+*.swp
