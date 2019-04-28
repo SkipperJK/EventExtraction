@@ -18,6 +18,14 @@ def get_entity(tag_seq, char_seq):
     return PER, LOC, ORG
 
 
+def get_ltp_entity(word_list, arcs):
+    # 拆分成三个计算的时候要for循环三次，会不会影响计算速度，有必要拆开吗，效率和可读性之间的tradeoff
+    who = get_who_entity(word_list, arcs)
+    whom = get_whom_entity(word_list, arcs)
+    predicate = get_predicate_entity(word_list, arcs)
+    return who, whom, predicate
+
+
 def get_PER_entity(tag_seq, char_seq):
     length = len(char_seq)
     PER = []
@@ -98,6 +106,29 @@ def get_ORG_entity(tag_seq, char_seq):
         pass
     #     ORG = []
     return ORG
+
+
+def get_who_entity(word_list, arcs):
+    who = []
+    for i, arc in enumerate(arcs):
+        if arc.relation == "SBV":  # subject verb
+            who.append(word_list[i])
+    return who
+
+def get_whom_entity(word_list, arcs):
+    whom = []
+    for i, arc in enumerate(arcs):
+        if arc.relation == "VOB":  # object verb
+            whom.append(word_list[i])
+    return whom
+
+
+def get_predicate_entity(word_list, arcs):
+    predicate =[]
+    for i, arc in enumerate(arcs):
+        if arc.relation == "HED":
+            predicate.append(word_list[i])
+    return predicate
 
 
 def get_logger(filename):

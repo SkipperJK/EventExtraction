@@ -45,22 +45,29 @@ class Event():
 
     """
 
-    date = ""  # 暂定为news发表的日期
-    location = ""
-    core_words = []
-    objects = []
-    loc_count_dic = {}
-    date_count_dic = {}
-    per_count_dic = {}
-    loc_count_dic_dnn = {}
-    org_count_dic = {}
+    def __init__(self):
+        self.date = ""  # 暂定为news发表的日期
+        self.location = ""
+        # core_words = []
+        # objects = []
+        self.who_count_dic = {}
+        self.whom_count_dic = {}
+        self.predicate_count_dic = {}
+        self.loc_count_dic = {}
+        self.date_count_dic = {}
+        self.per_count_dic = {}
+        self.loc_count_dic_dnn = {}
+        self.org_count_dic = {}
 
     def show(self):
         print("Event detail:")
         print("\tWhen: %s" % (self.date))
         print("\tWhere: %s" % (self.location))
-        print("\tOjects: %s" % (' '.join(self.objects)))
-        print("\tCore Words: %s" % (' '.join(self.core_words)))
+        # print("\tOjects: %s" % (' '.join(self.objects)))
+        # print("\tCore Words: %s" % (' '.join(self.core_words)))
+        print("\twho_count_dic:", self.who_count_dic)
+        print("\twhom_count_dic:", self.whom_count_dic)
+        print("\tpredicate_count_dic:", self.predicate_count_dic)
         print("\tloc_count_dic:", self.loc_count_dic)
         print("\tdate_count_dic:", self.date_count_dic)
         print("\tper_count_dic:", self.per_count_dic)

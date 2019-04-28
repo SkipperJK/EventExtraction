@@ -28,16 +28,17 @@ class TokenizeNews():
     """
 
     #     _id = ''
-    title = ''
-    seg_pos_title = []
-    sentences = []
-    topic_words = []
-    descend_sentence_index = []
-    max_sentence_original_socre = 0
-    token_weight_dic = {}
+    def __init__(self):
+        self.title = ''
+        self.seg_pos_title = []
+        self.sentences = []
+        self.topic_words = []
+        self.descend_sentence_index = []
+        self.max_sentence_original_socre = 0
+        self.token_weight_dic = {}
     #     seg_pos_content = []
     #     seg_pos_all_text = []
-    event = None
+        self.event = None
 
     def title_token_string(self):
         title = ''
@@ -77,7 +78,6 @@ def preprocessing(news):
     tokenizeNews.seg_pos_title = seg_pos.cut(news.title)
     sentences = SentenceSplitter.split(news.content)  # Using ltp split sentence
     sentences = [x for x in sentences if x != '']
-    tokenizeNews.sentences = []  # 这里如果不这样,seg_pos_sentences的个数会一直增加， #感觉是TokenizeNews() 得到的变量tokenizeNews成员变量属性值没有重置
     for idx, x in enumerate(sentences):
         sentence = Sentence()
         sentence.text = x

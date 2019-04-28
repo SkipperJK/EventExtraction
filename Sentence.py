@@ -17,17 +17,18 @@ class Sentence():
         score: finally score
     """
 
-    text = ''
-    seg_pos = []
-    location = 0
-    score_original = 0
+    def __init__(self):
+        self.text = ''
+        self.seg_pos = []
+        self.location = 0
+        self.score_original = 0
 
-    score_term = 0
-    score_location = 0
-    score_len = 0
-    score_entitiy = 0
-    score_title = 0
-    score = 0
+        self.score_term = 0
+        self.score_location = 0
+        self.score_len = 0
+        self.score_entitiy = 0
+        self.score_title = 0
+        self.score = 0
 
     def show(self):
         print(self.text)

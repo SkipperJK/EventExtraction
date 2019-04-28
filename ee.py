@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import os, argparse, time, random
 from model import BiLSTM_CRF
-from utils import str2bool, get_logger, get_entity
+from utils import str2bool, get_logger, get_entity, get_ltp_entity
 from data import read_corpus, read_dictionary, tag2label, random_embedding
 
 from News import *
@@ -10,6 +10,29 @@ from preprocessing import *
 from TokenizeNews import *
 from Sentence import *
 from Event import *
+
+from pyltp import Segmentor, Postagger, Parser, NamedEntityRecognizer, SementicRoleLabeller
+LTP_DATA_DIR = '/home/scidb/skipper/ltp_data_v3.4.0'
+
+
+
+# 没有加载模型成功，竟然不报错。。。
+# 分词模型-load
+seg_model_path = os.path.join(LTP_DATA_DIR, 'cws.model')
+segmentor = Segmentor()
+segmentor.load(seg_model_path)
+
+# 词性标注模型-load
+pos_model_path = os.path.join(LTP_DATA_DIR, 'pos.model')
+postagger = Postagger()
+postagger.load(pos_model_path)
+
+# 依存句法分析模型-load
+parser_model_path = os.path.join(LTP_DATA_DIR, 'parser.model')
+ltp_parser = Parser()
+ltp_parser.load(parser_model_path)
+
+
 
 ## Session configuration
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
@@ -87,6 +110,30 @@ def execute(sentence):
     # print('PER: {}\nLOC: {}\nORG: {}'.format(PER, LOC, ORG))
     return PER, LOC, ORG
 
+
+def ltp_parse(sentence):  # 现在有个问题就是，模型可不可以当作参数传递，应该可以的把，模型也是类对象啊
+
+    words = segmentor.segment(sentence)
+    word_list = list(words)
+    #print(word_list)
+    postags = postagger.postag(words)
+    # postags_list = list(postags)
+
+    arcs = ltp_parser.parse(words, postags)
+
+    who, whom, predicate = get_ltp_entity(word_list, arcs)
+    return who, whom, predicate
+
+    # for i, arc in enumerate(arcs):
+    #     print("%d:%s"%(arc.head, arc.relation), end ='\t ')
+    #     if arc.relation == "HED":
+    #         predicate.append(word_list[i])
+    #     if arc.relation == "SBV": # subject verb
+    #         who.append(word_list[i])
+    #     if arc.relation == "VOB": # object verb
+    #         whom.append(word_list[i])
+    # print("\nwho: {}\nwhom: {}\npredicate: {}\n".format(who, whom, predicate))
+
 import time
 fp = open("./log.txt", "a")
 fp.write("Begin:%s \n"%time.asctime(time.localtime()))
@@ -126,8 +173,54 @@ for tokenizeNews in tokenizeNews_list:
     event.loc_count_dic = find_location(tokenizeNews, N=5)
     event_list.append(event)
 
-for j, tokenizeNews in enumerate(tokenizeNews_list):
-    fp.write("第 %d 个新闻：\n"%j)
+
+for i, tokenizeNews in enumerate(tokenizeNews_list):
+    who_list = []
+    whom_list = []
+    predicate_list = []
+    tmp_who, tmp_whom, tmp_predicate = ltp_parse(tokenizeNews.title)
+    who_list += tmp_who
+    whom_list += tmp_whom
+    predicate_list += tmp_predicate
+    # print(who_list)
+    # print(whom_list)
+    # print(predicate_list)
+
+    for j, idx in enumerate(tokenizeNews.descend_sentence_index):
+        if j < 4:
+            tmp_who, tmp_whom, tmp_predicate = ltp_parse(tokenizeNews.sentences[idx].text)
+            who_list += tmp_who
+            whom_list += tmp_whom
+            predicate_list += tmp_predicate
+            # print(who_list)
+            # print(whom_list)
+            # print(predicate_list)
+        else:
+            break
+    for who in who_list:
+        if who not in event_list[i].who_count_dic.keys():
+            event_list[i].who_count_dic[who] = 1
+        else:
+            event_list[i].who_count_dic[who] += 1
+    for whom in whom_list:
+        if whom not in event_list[i].whom_count_dic.keys():
+            event_list[i].whom_count_dic[whom] = 1
+        else:
+            event_list[i].whom_count_dic[whom] += 1
+    for predicate in predicate_list:
+        if predicate not in event_list[i].predicate_count_dic.keys():
+            event_list[i].predicate_count_dic[predicate] = 1
+        else:
+            event_list[i].predicate_count_dic[predicate] += 1
+
+    # break
+    
+# event_list[0].show()
+# exit(0)
+
+
+for i, tokenizeNews in enumerate(tokenizeNews_list):
+    fp.write("第 %d 个新闻：\n"%i)
 
     PER = []
     LOC = []
@@ -141,8 +234,8 @@ for j, tokenizeNews in enumerate(tokenizeNews_list):
     PER += tmp_per
     LOC += tmp_loc
     ORG += tmp_org
-    for i, idx in enumerate(tokenizeNews.descend_sentence_index):
-        if i < 4:
+    for j, idx in enumerate(tokenizeNews.descend_sentence_index):
+        if j < 4:
             tmp_per = []
             tmp_loc = []
             tmp_org = []
@@ -174,19 +267,23 @@ for j, tokenizeNews in enumerate(tokenizeNews_list):
             org_count_dic[organization] += 1
 
     # 先假设新闻事件为发布时间
-    event_list[j].date = news_list[j].date
-    event_list[j].per_count_dic = per_count_dic
-    event_list[j].loc_count_dic_dnn = loc_count_dic_dnn
-    event_list[j].org_count_dic = org_count_dic
-    fp.write("第 %d 个事件：\n"%j)
+    event_list[i].date = news_list[i].date
+    event_list[i].per_count_dic = per_count_dic
+    event_list[i].loc_count_dic_dnn = loc_count_dic_dnn
+    event_list[i].org_count_dic = org_count_dic
+
+    fp.write("第 %d 个事件：\n"%i)
     fp.write("Event detail: \n")
-    fp.write("\tWhen: %s\n" % (event_list[j].date))
-    fp.write("\tWhere: %s\n" % (event_list[j].location))
-    fp.write("\tloc_count_dic: {}\n".format(event_list[j].loc_count_dic))
-    fp.write("\tdate_count_dic: {}\n".format(event_list[j].date_count_dic))
-    fp.write("\tper_count_dic: {}\n".format(event_list[j].per_count_dic))
-    fp.write("\tloc_count_dic_dnn: {}\n".format(event_list[j].loc_count_dic_dnn))
-    fp.write("\torg_count_dic: {}\n".format(event_list[j].org_count_dic))
+    fp.write("\tWhen: %s\n" % (event_list[i].date))
+    fp.write("\tWhere: %s\n" % (event_list[i].location))
+    fp.write("\twho_count_dic: {}\n".format(event_list[i].who_count_dic))
+    fp.write("\twhom_count_dic: {}\n".format(event_list[i].whom_count_dic))
+    fp.write("\tpredicate_count_dic: {}\n".format(event_list[i].predicate_count_dic))
+    fp.write("\tloc_count_dic: {}\n".format(event_list[i].loc_count_dic))
+    fp.write("\tdate_count_dic: {}\n".format(event_list[i].date_count_dic))
+    fp.write("\tper_count_dic: {}\n".format(event_list[i].per_count_dic))
+    fp.write("\tloc_count_dic_dnn: {}\n".format(event_list[i].loc_count_dic_dnn))
+    fp.write("\torg_count_dic: {}\n".format(event_list[i].org_count_dic))
 
 fp.close()
 for event in event_list:

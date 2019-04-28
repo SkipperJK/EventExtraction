@@ -13,11 +13,12 @@ class News():
     """
 
     #     _id = ''
-    title = ''
-    content = ''
-    topic = ''
-    date = ''
-    images = []
+    def __init__(self):
+        self.title = ''
+        self.content = ''
+        self.topic = ''
+        self.date = ''
+        self.images = []
 
     def show(self):
         print("Title: %s" % self.title)
