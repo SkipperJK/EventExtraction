@@ -1,30 +1,29 @@
-import numpy as np
 import os, time, sys
 import tensorflow as tf
 from tensorflow.contrib.rnn import LSTMCell
 from tensorflow.contrib.crf import crf_log_likelihood
 from tensorflow.contrib.crf import viterbi_decode
-from data import pad_sequences, batch_yield
-from utils import get_logger
-from eval import conlleval
+from NERExtract.data import pad_sequences, batch_yield
+from NERExtract.utils import get_logger
+from NERExtract.eval import conlleval
 
 
 class BiLSTM_CRF(object):
-    def __init__(self, args, embeddings, tag2label, vocab, paths, config):
-        self.batch_size = args.batch_size
-        self.epoch_num = args.epoch
-        self.hidden_dim = args.hidden_dim
+    def __init__(self, embeddings, tag2label, vocab, paths, config):
+        self.batch_size = 64
+        self.epoch_num = 40
+        self.hidden_dim = 300
         self.embeddings = embeddings
-        self.CRF = args.CRF
-        self.update_embedding = args.update_embedding
-        self.dropout_keep_prob = args.dropout
-        self.optimizer = args.optimizer
-        self.lr = args.lr
-        self.clip_grad = args.clip
+        self.CRF = True
+        self.update_embedding = True
+        self.dropout_keep_prob = 0.5
+        self.optimizer = 'Adam'
+        self.lr = 0.001
+        self.clip_grad = 5.0
         self.tag2label = tag2label
         self.num_tags = len(tag2label)
         self.vocab = vocab
-        self.shuffle = args.shuffle
+        self.shuffle = True
         self.model_path = paths['model_path']
         self.summary_path = paths['summary_path']
         self.logger = get_logger(paths['log_path'])
