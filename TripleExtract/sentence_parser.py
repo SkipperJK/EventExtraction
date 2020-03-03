@@ -9,7 +9,7 @@ roles_dict[role.index] = {arg.name:[arg.name, arg.range.start, arg.range.end] fo
 class SentenceParser:
     def __init__(self):
         LTP_DIR = './ltp_data_v3.4.0'
-        print(LTP_DIR)
+        print("加载模型路径", LTP_DIR)
         self.segmentor = Segmentor()
         self.segmentor.load(os.path.join(LTP_DIR, "cws.model"))
 
@@ -24,6 +24,7 @@ class SentenceParser:
 
         self.labeller = SementicRoleLabeller()
         self.labeller.load(os.path.join(LTP_DIR, 'pisrl.model'))
+        print("加载完毕")
 
 
     '''句法分析---为句子中的每个词语维护一个依存句法依存儿子节点（词的出度）的字典'''
