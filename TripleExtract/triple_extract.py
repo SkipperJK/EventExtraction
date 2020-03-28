@@ -3,6 +3,7 @@ from TripleExtract.utlis import *
 import re
 import json
 
+
 """事件模版提取
 想要的是通过从语料库中抽取大量的三元组信息，挖掘事件模版。
     三元组：[sub, verb, obj]
@@ -26,7 +27,7 @@ TO-DO： 应该可以通过目前深度学习进行分词，词性标注，等�
 
 class TripleExtractor:
     def __init__(self):
-        print("tet")
+        print("模型加载：")
         self.parser = SentenceParser()
 
 
@@ -311,8 +312,10 @@ if __name__ == '__main__':
 
     extractor = TripleExtractor()
 
+    _, svos = extractor.triples_main("16岁少年被五同学堵厕所围殴")
 
-    MongoURL = "10.141.212.160:27017"
+    # exit(0)
+    MongoURL = "192.168.5.150:27017"
     Client = MongoClient(MongoURL)
     db = Client['Sina']
     # db.authenticate('scidb', 'he')
@@ -320,21 +323,26 @@ if __name__ == '__main__':
 
     col_write = db['triple_20191121']
 
-    news_set = collection.find({})
-
-    for item in news_set:
+    # exit(0)
+    for idx, item in enumerate(collection.find({})):
+        print(idx, end='\t')
         result = {}
+
         result['_id'] = 'article-' + str(item['_id'])
         title_sents, title_svos = extractor.triples_main(item['title'])
         content_sents, content_svos = extractor.triples_main(item['content'])
 
         for i, sent in enumerate(title_sents):
-            result[sent] = title_svos[i]
+            result[sent.replace('.', '')] = title_svos[i]
 
         for i, sent in enumerate(content_sents):
-            result[sent] = content_svos[i]
+            result[sent.replace('.', '')] = content_svos[i]
 
-        col_write.insert(result)
+        # try:
+        #     col_write.insert(result)
+        # except:
+        #     print("error")
+
 
 
 

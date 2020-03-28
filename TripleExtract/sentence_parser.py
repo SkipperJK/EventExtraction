@@ -1,5 +1,6 @@
 import os
 from pyltp import Segmentor, Postagger, Parser, NamedEntityRecognizer, SementicRoleLabeller
+from config import LTP_DIR
 
 """
 利用哈工大的自然语言处理工具实现：分词，词性标注，依存句法分析，命名体识别，语义角色识别
@@ -8,7 +9,7 @@ roles_dict[role.index] = {arg.name:[arg.name, arg.range.start, arg.range.end] fo
 """
 class SentenceParser:
     def __init__(self):
-        LTP_DIR = './ltp_data_v3.4.0'
+        # LTP_DIR = './ltp_data_v3.4.0'
         print("加载模型路径", LTP_DIR)
         self.segmentor = Segmentor()
         self.segmentor.load(os.path.join(LTP_DIR, "cws.model"))
