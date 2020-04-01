@@ -154,7 +154,13 @@ class SentenceParser:
         return roles_dict
 
 
-
+    def close(self):
+        """关闭与释放模型"""
+        self.segmentor.release()
+        self.postagger.release()
+        self.recognizer.release()
+        self.parser.release()
+        self.labeller.release()
 
 
 

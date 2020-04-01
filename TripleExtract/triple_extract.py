@@ -26,25 +26,18 @@ TO-DO： 应该可以通过目前深度学习进行分词，词性标注，等�
 
 
 class TripleExtractor:
-    def __init__(self):
-        print("模型加载：")
-        self.parser = SentenceParser()
+    def __init__(self, words, postags, nertags, child_dict_list, format_parse_list, roles_dict):
+        self.words = words
+        self.postags = postags
+        self.nertags = nertags
+        self.child_dict_list = child_dict_list
+        self.format_parse_list = format_parse_list
+        self.roles_dict = roles_dict
 
 
-    # 分句函数一
+
     def split_sents(self, content):
         return [sentence for sentence in re.split(r'[？?！!。；;：:\n\r]', content) if sentence]
-
-    # 分句函数二
-    def cut_sent(self, content):
-        content = re.sub('([。！？\?])([^”’])', r"\1\n\2", content)  # 单字符断句符
-        content = re.sub('(\.{6})([^”’])', r"\1\n\2", content)  # 英文省略号
-        content = re.sub('(\…{2})([^”’])', r"\1\n\2", content)  # 中文省略号
-        content = re.sub('([。！？\?][”’])([^，。！？\?])', r'\1\n\2', content)
-        # 如果双引号前有终止符，那么双引号才是句子的终点，把分句符\n放到双引号后，注意前面的几句都小心保留了双引号
-        content = content.rstrip()  # 段尾如果有多余的\n就去掉它
-        # 很多规则中会考虑分号;，但是这里我把它忽略不计，破折号、英文双引号等同样忽略，需要的再做些简单调整即可。
-        return content.split("\n")
 
 
 
@@ -52,7 +45,7 @@ class TripleExtractor:
     利用语义角色标注,直接获取主谓宾三元组,
         每个元素都是动词，以及与该动词相关的语义信息： A0, A1
     '''
-    def according_srl_extract(self, words, postags, nertags, roles_dict, role_index):
+    def according_srl_extract(self, role_index):
         """
         根据动词下标role_index，和roles_dict找出给动词的三元组
         :param words:
@@ -69,8 +62,8 @@ class TripleExtractor:
             'obj': {}
         }
 
-        triple['verb'] = words[role_index]
-        role_info = roles_dict[role_index]
+        triple['verb'] = self.words[role_index]
+        role_info = self.roles_dict[role_index]
 
         # 能否用一个谓词的语义角色标注来实现事件提取？？？？
         # 因为语义角色标注就是实现，动词，动词的主语和宾语，还有与该动词相关的时间词和地点词等等
@@ -82,21 +75,21 @@ class TripleExtractor:
         # A0：动作的施事（宾语） A1：动作的影响（这里当作宾语）
         if 'A0' in role_info.keys():
             # triple['sub']['words'], triple['sub']['postags'] = get_WordsAndPostagsOfRole(words, postags, role_info['A0'][1], role_info['A0'][2])
-            triple['sub'] = get_WordsDictOfRole(words, postags, role_info['A0'][1], role_info['A0'][2])
+            triple['sub'] = get_WordsDictOfRole(self.words, self.postags, role_info['A0'][1], role_info['A0'][2])
 
 
         if 'A1' in role_info.keys():
-            triple['obj'] = get_WordsDictOfRole(words, postags, role_info['A1'][1], role_info['A1'][2])
+            triple['obj'] = get_WordsDictOfRole(self.words, self.postags, role_info['A1'][1], role_info['A1'][2])
 
 
         if 'LOC' in role_info.keys():
             triple['loc'] = {}
-            triple['loc'] = get_WordsDictOfRole(words, postags, role_info['LOC'][1], role_info['LOC'][2])
+            triple['loc'] = get_WordsDictOfRole(self.words, self.postags, role_info['LOC'][1], role_info['LOC'][2])
 
 
         if 'TMP' in role_info.keys():
             triple['tmp'] = {}
-            triple['tmp'] = get_WordsDictOfRole(words, postags, role_info['TMP'][1], role_info['TMP'][2])
+            triple['tmp'] = get_WordsDictOfRole(self.words, self.postags, role_info['TMP'][1], role_info['TMP'][2])
 
         if 'A0' in role_info.keys() and 'A1' in role_info.keys():
             return triple
@@ -107,7 +100,7 @@ class TripleExtractor:
     '''
     利用依存句法分析提取三元组
     '''
-    def accroding_dp_extarct(self, words, postags, nertags, child_dict_list, format_parse_list, word_index):
+    def accroding_dp_extarct(self, word_index):
         flag = False
         triple = {
             'sub': {},
@@ -115,15 +108,15 @@ class TripleExtractor:
             'obj': {}
         }
 
-        triple['verb'] = words[word_index]
-        child_dict = child_dict_list[word_index]
+        triple['verb'] = self.words[word_index]
+        child_dict = self.child_dict_list[word_index]
 
 
         if 'SBV' in child_dict:
-            triple['sub'][words[child_dict['SBV'][0]]] = postags[child_dict['SBV'][0]]
+            triple['sub'][self.words[child_dict['SBV'][0]]] = self.postags[child_dict['SBV'][0]]
 
         if 'VOB' in child_dict:
-            triple['obj'][words[child_dict['VOB'][0]]] = postags[child_dict['VOB'][0]]
+            triple['obj'][self.words[child_dict['VOB'][0]]] = self.postags[child_dict['VOB'][0]]
 
         if triple['sub'] and triple['obj']:
             return triple
@@ -189,22 +182,22 @@ class TripleExtractor:
         2) 若SRL抽取失败，根据规则，在 句法依存树 上抽取三元组（依存句法分析）
     """
 
-    def extract(self, words, postags, nertags, child_dict_list, format_parse_list, roles_dict):
+    def extract(self):
         svos = []
 
-        for index in range(len(words)):
-            word_pos = postags[index]
+        for index in range(len(self.words)):
+            word_pos = self.postags[index]
 
-            if index in roles_dict:
+            if index in self.roles_dict:
                 # 查看SRL提取结果
                 # flag1, triple = self.according_srl_extract(words, postags, nertags, roles_dict, index)
-                triple = self.according_srl_extract(words, postags, nertags, roles_dict, index)
+                triple = self.according_srl_extract(index)
                 if (triple):
                     svos.append(triple)
             else:
                 # 查看DP提取结果
                 # flag2, triple = self.accroding_dp_extarct(words, postags, nertags, child_dict_list, format_parse_list, index)
-                triple = self.accroding_dp_extarct(words, postags, nertags, child_dict_list, format_parse_list, index)
+                triple = self.accroding_dp_extarct(index)
                 if (triple):
                     svos.append(triple)
 
@@ -253,33 +246,6 @@ class TripleExtractor:
 
 
 
-
-    '''文本三元组综合抽取主函数'''
-    def triples_main(self, content):
-        sentences = self.split_sents(content)
-
-        ret_sents = []
-        svos = []
-
-        for sentence in sentences:
-            # 处理模型输出
-            words, postags, nertags, child_dict_list, format_parse_list, roles_dict = self.parser.parser_main(sentence)
-            # 三元组提取
-            # svo = self.extract(words, postags, nertags, child_dict_list, format_parse_list, roles_dict)
-            svo = self.extract(words, postags, nertags, child_dict_list, format_parse_list, roles_dict)
-            # print('\n\n-----------------------', sentence)
-            # print(svo)
-            # print(json.dumps(svo, indent=4, ensure_ascii=False))
-
-            if(svo):
-                ret_sents.append(sentence)
-                svos += svo
-
-        return ret_sents, svos
-
-
-
-
 if __name__ == '__main__':
     # content1 = """环境很好，位置独立性很强，比较安静很切合店名，半闲居，偷得半日闲。点了比较经典的菜品，味道果然不错！烤乳鸽，超级赞赞赞，脆皮焦香，肉质细嫩，超好吃。艇仔粥料很足，香葱自己添加，很贴心。金钱肚味道不错，不过没有在广州吃的烂，牙口不好的慎点。凤爪很火候很好，推荐。最惊艳的是长寿菜，菜料十足，很新鲜，清淡又不乏味道，而且没有添加调料的味道，搭配的非常不错！"""
     # content2 = """近日，一条男子高铁吃泡面被女乘客怒怼的视频引发热议。女子情绪激动，言辞激烈，大声斥责该乘客，称高铁上有规定不能吃泡面，质问其“有公德心吗”“没素质”。视频曝光后，该女子回应称，因自己的孩子对泡面过敏，曾跟这名男子沟通过，但对方执意不听，她才发泄不满，并称男子拍视频上传已侵犯了她的隐私权和名誉权，将采取法律手段。12306客服人员表示，高铁、动车上一般不卖泡面，但没有规定高铁、动车上不能吃泡面。
@@ -301,49 +267,12 @@ if __name__ == '__main__':
     # content6 = '太原：16岁少年被五同学堵厕所围殴！向校园霸凌说不！（监控）'
     #
     # content7 = '李克强总理今天来我家了,我感到非常荣幸'
-    # extractor = TripleExtractor()
-    #
-    # svos = extractor.triples_main(content2)
-    #
-    # print('---------------', len(svos))
-    from pymongo import MongoClient
     from bson import ObjectId
-    # from TripleExtract.triple_extract import TripleExtractor
-
-    extractor = TripleExtractor()
-
-    _, svos = extractor.triples_main("16岁少年被五同学堵厕所围殴")
-
-    # exit(0)
-    MongoURL = "192.168.5.150:27017"
-    Client = MongoClient(MongoURL)
-    db = Client['Sina']
-    # db.authenticate('scidb', 'he')
-    collection = db['article20191121']
-
-    col_write = db['triple_20191121']
-
-    # exit(0)
-    for idx, item in enumerate(collection.find({})):
-        print(idx, end='\t')
-        result = {}
-
-        result['_id'] = 'article-' + str(item['_id'])
-        title_sents, title_svos = extractor.triples_main(item['title'])
-        content_sents, content_svos = extractor.triples_main(item['content'])
-
-        for i, sent in enumerate(title_sents):
-            result[sent.replace('.', '')] = title_svos[i]
-
-        for i, sent in enumerate(content_sents):
-            result[sent.replace('.', '')] = content_svos[i]
-
-        # try:
-        #     col_write.insert(result)
-        # except:
-        #     print("error")
 
 
+    s = SentenceParser()
 
-
-
+    words, postags, nertags, child_dict_list, format_parse_list, roles_dict = s.parser_main('李克强总理今天来我家了,我感到非常荣幸')
+    e = TripleExtractor(words, postags, nertags, child_dict_list, format_parse_list, roles_dict)
+    svos = e.extract()
+    print(svos)
