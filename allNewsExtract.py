@@ -1,18 +1,17 @@
-from pymongo import MongoClient
-from TripleExtract.triple_extract import TripleExtractor
-import time
 import os
+import time
+from pymongo import MongoClient
+from TripleExtract.utlis import *
+from TripleExtract.triple_extract import TripleExtractor
+from TripleExtract.sentence_parser import SentenceParser
 
-# extractor = TripleExtractor()  # 这里创建，多进程无法共享
+sent_parser = SentenceParser()  # 这里创建，多进程无法共享
 # 注意 在 sentence_parser.py 中路径为 LTP_DIR = './ltp_data_v3.4.0'， 但是运行这个文件时，路径就不一样了./ 代表当前运行文件所在路径
-from pymongo.collection import Collection
-from pymongo.cursor import Cursor
 
 from multiprocessing import Process
 from multiprocessing import Pool, cpu_count
 
 
-# collection = 'test_corcurrent'
 
 
 
@@ -23,7 +22,6 @@ def extract_and_write(MongoURL, datebase, read_collection, write_collection, sta
     read_collet = db[read_collection]
     write_collet = db[write_collection]
 
-    extractor = TripleExtractor()  # 如果每个进程使用建立一个会不会更快
 
     data = read_collet.find({}).skip(start)
     for idx, item in enumerate(data):
@@ -32,13 +30,30 @@ def extract_and_write(MongoURL, datebase, read_collection, write_collection, sta
 
         result = {}
         result['_id'] = 'article-' + str(item['_id'])
-        title_sents, title_svos = extractor.triples_main(item['title'])
-        content_sents, content_svos = extractor.triples_main(item['content'])
+        # print(item['title'])
+        try:
+            for sent in split_sentence(item['title']):
+                if len(sent) > 6 and len(sent) < 100:
+                    words, postags, nertags, child_dict_list, format_parse_list, roles_dict = sent_parser.parser_main(sent)
+                    extractor = TripleExtractor(words, postags, nertags, child_dict_list, format_parse_list, roles_dict)
+                    svos = extractor.extract()
+                    # print(sent, svos)
+                    result[sent.replace('.', '')] = svos
 
-        for i, sent in enumerate(title_sents):
-            result[sent.replace('.', '')] = title_svos[i]
-        for i, sent in enumerate(content_sents):
-            result[sent.replace('.', '')] = content_svos[i]
+
+            for sent in split_sentence(item['content']):
+                if len(sent) > 6 and len(sent) < 100:
+                    words, postags, nertags, child_dict_list, format_parse_list, roles_dict = sent_parser.parser_main(sent)
+                    extractor = TripleExtractor(words, postags, nertags, child_dict_list, format_parse_list, roles_dict)
+                    svos = extractor.extract()
+                    # print(sent, svos)
+                    result[sent.replace('.', '')] = svos
+        except Exception as e:
+            print("extract error: ", e)
+        # for i, sent in enumerate(title_sents):
+        #     result[sent.replace('.', '')] = title_svos[i]
+        # for i, sent in enumerate(content_sents):
+        #     result[sent.replace('.', '')] = content_svos[i]
 
         try:
             write_collet.insert(result)
@@ -59,7 +74,7 @@ if __name__ == '__main__':
     doc_count = MongoClient(MongoURL)[datebase][read_collection].count()
 
     cpu_num = cpu_count()
-    cpu_num = 4  # 内存限制
+    cpu_num = 8   # 内存限制
 
     count = doc_count // cpu_num
     parts_range = [ [i*count,  i*count+count-1]  for i in range(cpu_num)]
@@ -67,9 +82,13 @@ if __name__ == '__main__':
 
     start_time = time.time()
     p = Pool(cpu_num)
+    rets = []
     for i in range(cpu_num):
-        # print(MongoURL, datebase, read_collection, write_collection, parts_range[i][0], parts_range[i][1])
-        p.apply_async(extract_and_write, args=(MongoURL, datebase, read_collection, write_collection, parts_range[i][0], parts_range[i][1]))
+        ret = p.apply_async(extract_and_write, args=(MongoURL, datebase, read_collection, write_collection, parts_range[i][0], parts_range[i][1]))
+        rets.append(ret)
+
+    for ret in rets:
+        print(ret.get())  # 这样才能输出子程序异常
 
     p.close()
     p.join()
@@ -77,3 +96,5 @@ if __name__ == '__main__':
     end_time = time.time()
 
     print("总用时：{}".format(end_time-start_time))
+
+    # 内存溢出是因为句子太长
